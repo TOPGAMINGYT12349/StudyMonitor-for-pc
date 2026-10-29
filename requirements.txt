@@ -1,0 +1,12 @@
+opencv-python==4.10.0.84
+mediapipe==0.10.21
+psutil==6.1.1
+pywin32==308
+plyer==2.1.0
+pyinstaller==6.11.1
+pygame==2.6.1
+SpeechRecognition==3.14.3
+pyttsx3==2.98
+PyAudio==0.2.14
+pyautogui==0.9.54
+pyperclip==1.9.0

@@ -1,317 +1,81 @@
-# 🧠 StudyMonitor for PC — JARVIS Guardian
+# Study Monitor for Windows 11
 
-### Your Personal Study Companion | Focus Better. Study Smarter. Stay Productive.
+A local-first Windows 11 study helper with a dark dashboard, webcam-based approximate alertness/head-direction estimates, configurable distracting-app warnings, custom MP3 audio, XP/levels/streaks, and local study-event analytics.
 
-StudyMonitor is a Windows desktop productivity application designed to help students maintain focus, reduce distractions, and build better study habits. It aims to make study sessions more productive through focus monitoring, alerts, audio features, and a personalized desktop experience.
+## What it does
 
-Built for students who want to take control of their screen time and create a more disciplined study environment.
+- Starts and pauses a focus session with a live timer.
+- Uses the webcam and MediaPipe Face Mesh to estimate prolonged eye closure, rough head droop, face absence, and horizontal head-turn/looking-away signals.
+- Checks the foreground Windows process every ~1.8 seconds.
+- Warns for process names in your **Distracting apps** list and for foreground apps not included in your **Allowed apps** list.
+- Lets you edit allowed and distracting app names in the dashboard.
+- Saves app lists under `%APPDATA%\StudyMonitor\settings.txt`; stores XP/streak data in `stats.json` and event history in `events.csv`.
+- Awards 5 XP per active session minute, tracks levels and daily streaks, and provides a weekly event-activity chart plus recent event log in **View study analytics**.
+- Uses the bundled custom MP3 for distraction warnings; the first visit warns, and a later separate visit can close the listed process if enabled.
+- Processes webcam frames locally. It does not record or save video.
 
----
+## Important limitations
 
-## 📌 Table of Contents
+- Drowsiness detection is approximate. Lighting, glasses, camera angle, face position, and natural blinking can cause false positives or missed detections. It is not a medical device.
+- The app alerts for explicitly listed distracting processes and for any foreground process not on the allowlist. Add every app you want to use for studying to **Allowed apps**. If you allow a browser such as `chrome.exe`, individual websites/tabs inside it cannot be distinguished by this version.
+- Browser tabs cannot reliably be distinguished by process name. For more precise website blocking, use a separate browser extension or DNS/hosts-based solution.
+- The webcam must be available and not already exclusively occupied by another app.
+- A packaged build is not signed. Windows SmartScreen may show an unrecognized-app warning.
+- The app can close process names explicitly listed as distracting on the second separate visit if enabled. This may lose unsaved work. It does not record video or upload camera data.
 
-- [About the Project](#-about-the-project)
-- [Features](#-features)
-- [Privacy and Data Security](#-privacy-and-data-security)
-- [System Requirements](#-system-requirements)
-- [Download](#-download)
-- [Installation Guide](#-installation-guide)
-- [How to Run](#-how-to-run)
-- [Troubleshooting](#-troubleshooting)
-- [Recommended Usage](#-recommended-usage)
-- [Limitations](#-limitations)
-- [Disclaimer](#-disclaimer)
-- [Developer](#-developer)
+## Recommended build environment
 
----
+Use **Windows 11 x64 and Python 3.11 x64**. This avoids compatibility surprises with the pinned computer-vision dependencies.
 
-## 🚀 About the Project
+1. Install Python 3.11 x64 from https://www.python.org/downloads/release/python-3119/
+2. During setup, enable **Add python.exe to PATH**.
+3. Extract this project folder to a simple path, such as `C:\\StudyMonitor`.
+4. Double-click `build_exe.bat`.
+5. When it finishes, run `dist\\StudyMonitor\\StudyMonitor.exe` (keep the whole `dist\\StudyMonitor` folder together).
 
-Studying on a PC can be challenging when games, social media, entertainment, and other applications compete for your attention.
+The build script installs dependencies in a project-local virtual environment. The initial install needs an internet connection. Running the app after building does not require internet access for its core features.
 
-StudyMonitor is designed to help you stay aware of your study habits and return your attention to your work when distractions occur.
+## First launch
 
-The project focuses on making a personal study assistant for Windows, with a desktop-based experience and configurable productivity features.
+1. Allow camera access if Windows asks: **Settings → Privacy & security → Camera → Let desktop apps access your camera**.
+2. Click **Start session**.
+3. Put your face in view with decent front lighting.
+4. Add executable process names in the **Distracting apps** box. Common examples:
+   - `discord.exe`
+   - `steam.exe`
+   - `epicgameslauncher.exe`
+   - `spotify.exe`
+   - `telegram.exe`
+   - `RobloxPlayerBeta.exe`
+5. Add apps you want to treat as study apps to **Allowed apps**. The allowed list is stored separately for your study setup; distraction actions are driven by the distracting-app list.
+6. Use **Save settings** to persist your lists. Any foreground app not on the allowed list will trigger an alert; the distracting-app list can explicitly flag apps even if you accidentally add one to the allowed list.
 
-Whether you are preparing for school examinations, working on assignments, learning programming, or studying independently, StudyMonitor aims to support a more focused workflow.
+## Troubleshooting
 
-### 🎯 Project Goals
+- **Camera unavailable:** close Camera/Teams/Zoom/other apps using the webcam; check Windows camera permissions; try launching the app again.
+- **Missing module:** rerun `build_exe.bat`, or in a terminal run `py -3.11 -m pip install -r requirements.txt`.
+- **Build errors:** ensure Python is 64-bit Python 3.11 and that `build_exe.bat` is run from the extracted project directory.
+- **False drowsiness alerts:** increase the eye-closure threshold duration in `study_monitor.py` from `1.8` seconds to `2.5` or `3.0`.
+- **No app alert:** open Task Manager → Details and check the actual executable name. Add that exact name to the distracting list.
+- **Notifications not visible:** enable Windows notifications for desktop apps and check Do not disturb / Focus settings.
 
-- Encourage consistent study habits.
-- Help users recognize and reduce distractions.
-- Make study sessions more structured.
-- Provide helpful alerts during study time.
-- Keep personal study information on the user's device where supported by the application.
-- Create a convenient desktop tool for students.
+## Privacy
 
----
+The webcam is used only while a session is running. Frames are analyzed in memory and are not written to disk. Process names are checked locally. Settings are stored locally. Analytics are local-only: event logs and XP/streak data stay on this PC. No video is saved or uploaded.
 
-## ✨ Features
+\n## Custom audio fix\n\nThis build plays only the supplied MP3; generated text-to-speech has been removed. The audio path uses PyInstaller's bundled resource directory. Click **Test sound** before starting a session. If playback fails, the app shows an error instead of silently substituting a generic beep. Rebuild with `build_exe.bat`.\n
 
-### 🎯 Focus and Productivity
+## Audio Manager (new)
 
-- Designed to support focused study sessions.
-- Helps users maintain awareness of distractions.
-- Provides a productivity-oriented desktop experience.
-- Supports a more structured study routine.
+Open **♫ Audio Manager** in the dashboard to add supported `.mp3`, `.wav`, `.ogg`, or `.flac` files, test them, remove them, assign a sound to an event, and set playback volume. Files are copied into `%APPDATA%\StudyMonitor\audio`; assignments and volume are saved in `%APPDATA%\StudyMonitor\audio_settings.json`. You can add/replace audio after building the EXE without rebuilding it. The bundled meme MP3 is copied to the audio library on first launch. Drowsiness audio can be assigned separately. Event choices for session-complete, break, and motivation are prepared for future event triggers. Playback is capped at 100% inside the app; it cannot exceed Windows/device volume.
 
-### 🔔 Alerts and Audio
 
-- Audio-based alerts where configured.
-- Support for custom audio files included with the application.
-- Designed to remind users to return to their studies when necessary.
+## JARVIS-style alerts and voice assistant (experimental)
 
-### 🖥️ Windows Desktop Application
-
-- Designed for Windows PCs.
-- Includes a Windows executable named `StudyMonitor.exe`.
-- Distributed as a compressed ZIP package.
-- Uses a folder-based application structure after extraction.
-
-### ⚙️ Customization
-
-Some behaviour may depend on the included configuration, audio files, and application version.
-
-Please refer to the actual application settings and bundled files to determine which features are available in your build.
-
----
-
-## 🔒 Privacy and Data Security
-
-Privacy is an important consideration for a desktop application that may interact with a user's study environment.
-
-### Local-First Approach
-
-StudyMonitor is intended to be used as a desktop application on your own Windows PC.
-
-Local storage means that information is stored on your device rather than in an online account or cloud database.
-
-**Important privacy note:** The exact storage and network behaviour depends on the application's implementation. The absence of cloud storage alone does not prove that an application never transmits data over the internet.
-
-### Privacy Principles
-
-- **Personal device:** Run the application on your own PC.
-- **Local files:** Application files and any locally stored logs remain on your computer unless you choose to share them or another process accesses them.
-- **No cloud-storage claim without verification:** Cloud storage and network communication must be checked in the source code before making stronger privacy claims.
-- **Responsible monitoring:** If webcam, microphone, or application-activity monitoring is enabled, understand what is accessed and when.
-- **User awareness:** Review the permissions and behaviour of the application before use.
-
-### Does StudyMonitor Upload My Data?
-
-This repository does not make a verified guarantee that every component operates entirely offline.
-
-To establish whether the application sends any data externally, its source code, third-party libraries, network connections, and runtime behaviour must be inspected.
-
-### Webcam and Microphone Privacy
-
-If a version of StudyMonitor uses a webcam or microphone for monitoring or voice interaction:
-
-- Grant access only when necessary.
-- Make sure monitoring is active only when intended.
-- Avoid recording or monitoring other people without their knowledge and consent.
-- Do not share private logs or recordings publicly.
-
-### Security Recommendation
-
-Download the application only from a source you trust. Keep your Windows installation updated and review security warnings before running downloaded executables.
-
----
-
-## 💻 System Requirements
-
-### Operating System
-
-- Windows 10 or Windows 11, subject to compatibility with the included build.
-
-### Required Files
-
-- The downloaded StudyMonitor ZIP archive.
-- A ZIP extraction utility such as Windows Extract All, 7-Zip, or WinRAR.
-- All supporting files and folders included in the extracted package.
-
-### Python Requirement
-
-Python may be required if the application uses a Python interpreter or depends on external Python packages at runtime.
-
-If the executable is fully packaged with its required Python runtime and dependencies, a separate Python installation may not be necessary.
-
-If you need Python, download it from the official website:
-
-https://www.python.org/downloads/
-
-When installing Python for development or source-code execution, select **Add Python to PATH** when available.
-
----
-
-## 📥 Download
-
-Download the ZIP package from the repository or its Releases section.
-
-**Package name:**
-
-`StudyMonitor_JARVIS_Guardian_Audio_Fix_v6.zip`
-
-After downloading, extract the archive before attempting to launch the application.
-
-For easier distribution, check the repository's **Releases** section for the latest version and any release-specific instructions.
-
----
-
-## 🛠️ Installation Guide
-
-Follow these steps to install and launch StudyMonitor on Windows.
-
-### Step 1 — Download the ZIP
-
-Download:
-
-`StudyMonitor_JARVIS_Guardian_Audio_Fix_v6.zip`
-
-Save it to a location with sufficient free disk space.
-
-### Step 2 — Extract the Archive
-
-Right-click the ZIP file and select:
-
-**Extract All...**
-
-Alternatively, use 7-Zip or WinRAR.
-
-Wait until the extraction process finishes. Do not run the executable directly from inside the compressed archive.
-
-### Step 3 — Install Python if Required
-
-If your build requires a separately installed Python runtime, download Python from:
-
-https://www.python.org/downloads/
-
-Install the version compatible with the application and its dependencies.
-
-If the packaged executable is self-contained, you may be able to skip this step.
-
-### Step 4 — Open the Extracted Folder
-
-Navigate to the extracted project folder.
-
-Follow this folder path:
-
-`dist` → `StudyMonitor` → `StudyMonitor.exe`
-
-### Step 5 — Launch the Application
-
-Double-click:
-
-`StudyMonitor.exe`
-
-Wait for the application to start.
-
-Keep the extracted application folder intact. Do not move the executable away from supporting files unless the application is confirmed to be self-contained.
-
-### Step 6 — If the Application Does Not Start
-
-See the troubleshooting section below for possible solutions.
-
----
-
-## ▶️ How to Run
-
-1. Download the ZIP archive.
-2. Extract the complete archive.
-3. Open the extracted project folder.
-4. Open `dist`.
-5. Open the `StudyMonitor` folder.
-6. Double-click `StudyMonitor.exe`.
-7. Follow any on-screen instructions provided by the application.
-
-For the best experience, close unnecessary distracting applications before starting a study session.
-
----
-
-## 🧰 Troubleshooting
-
-### Application Does Not Open
-
-- Confirm that extraction completed successfully.
-- Verify that `StudyMonitor.exe` exists in the expected directory.
-- Check that the supporting files have not been deleted.
-- Check Windows Security or antivirus notifications to determine whether a file was quarantined.
-- Only restore or allow a file if you trust its source and have verified it is safe.
-
-### Python-Related Errors
-
-If an error mentions Python, a missing module, or a missing runtime:
-
-- Verify whether the build requires a separate Python installation.
-- Check the Python version required by the project.
-- Review `requirements.txt` if you intend to run the source code.
-- Install dependencies only from trusted sources.
-
-### Audio Is Not Working
-
-- Check the Windows volume level.
-- Confirm that the correct audio output device is selected.
-- Verify that the bundled audio files have been extracted.
-- Check application settings, if available.
-- Ensure that Windows or another application is not muting the output.
-
-### Missing Files
-
-Do not delete files from the extracted folder unless you know they are unnecessary.
-
-Some files may be required for the executable to start or for audio and other features to work.
-
-### Windows Security Warning
-
-Windows may display a warning when running an executable that is not widely recognized or digitally signed.
-
-Do not bypass the warning automatically. Verify the source and inspect the file before deciding whether to run it.
-
----
-
-## 📚 Recommended Usage
-
-For a more productive study session:
-
-1. Choose a clear study goal.
-2. Keep only the applications needed for your work open.
-3. Start StudyMonitor if its monitoring features are appropriate for your session.
-4. Respond to reminders by returning your attention to the task.
-5. Take reasonable breaks between study sessions.
-6. Review your progress and adjust your study routine.
-
-StudyMonitor is a productivity aid, not a replacement for personal discipline or a well-planned study schedule.
-
----
-
-## ⚠️ Limitations
-
-- Compatibility may vary across Windows systems.
-- Some features may depend on local configuration and supporting files.
-- Behaviour may differ between packaged builds.
-- Python may be required for some execution or development workflows.
-- Privacy and offline operation have not been independently certified.
-- No application can guarantee the complete elimination of distractions.
-
----
-
-## ⚖️ Disclaimer
-
-StudyMonitor is provided as a personal productivity project.
-
-The application is supplied on an as-is basis, without a guarantee that every feature will work on every Windows PC.
-
-Users are responsible for checking the software's source, permissions, and security implications before running it.
-
-Do not use monitoring functionality to observe other people without appropriate knowledge and consent.
-
----
-
-## 👨‍💻 Developer
-
-**Created by: NO NEED**
-
-Project: StudyMonitor for PC — JARVIS Guardian
-
-A project focused on helping students improve concentration and build better study habits.
-
-If you find the project useful, consider starring the repository ⭐
+- Distraction events cycle through the bundled meme audio files and show a topmost full-screen “PLEASE STUDY, SIR!” overlay. Press Esc or click the dismiss button to close it.
+- The **JARVIS Voice Assistant** button listens for one command in Hindi or English. Speech recognition uses Google's online recognition service and therefore needs internet; the microphone and optional voice packages must work.
+- Supported starter commands include “WhatsApp kholo”, “WhatsApp khol [chat name]”, “study session start”, “pause session”, and “type [text]”. Dictation pastes into the currently focused text field; it does not send messages automatically.
+- The WhatsApp URI/search behavior depends on the installed WhatsApp version and UI. Always verify the selected chat and text before sending.
+- A soft female voice is selected only if Windows has a compatible installed voice (for example Zira/Heera). Available voices vary by Windows language pack; install a Hindi/Indian English voice in Windows Settings > Time & language > Speech if needed.
+- Camera analysis remains local. Voice recognition is online and is only started when you press the assistant button.
+- This build's voice assistant is a starter command handler, not a general-purpose conversational AI. It does not support arbitrary apps or arbitrary natural-language actions yet.
